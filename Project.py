@@ -162,17 +162,24 @@ def compile(pofix):
 def visualize_nfa(nfa):
     dot = graphviz.Digraph(format='png')
 
+    estados = 0 # Contador de estados
+
     def add_states_edges(node, visited):
+        nonlocal estados
         if node in visited:
             return
         visited.add(node)
+        estados += 1
 
-        dot.node(str(id(node)), label=str(node.label) if node.label is not None else 'ε')
+        dot.node(str(id(node)), label=f'q{estados}')
+
         if node.edge1:
-            dot.edge(str(id(node)), str(id(node.edge1)))
+            label = node.edge1.label if node.edge1.label else 'ε'
+            dot.edge(str(id(node)), str(id(node.edge1)), label=label)
             add_states_edges(node.edge1, visited)
         if node.edge2:
-            dot.edge(str(id(node)), str(id(node.edge2)))
+            label = node.edge2.label if node.edge2.label else 'ε'
+            dot.edge(str(id(node)), str(id(node.edge2)), label=label)
             add_states_edges(node.edge2, visited)
 
     add_states_edges(nfa.initial, set())
@@ -181,7 +188,7 @@ def visualize_nfa(nfa):
 
 
 # Ejemplo de uso
-exp = '(a*|b*)+'
+exp = '(b|b)*abb(a|b)*'
 infix = convert_optional(exp)
 infix = convertir_expresion(infix)
 print(infix)
