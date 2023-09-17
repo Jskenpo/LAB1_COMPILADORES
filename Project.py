@@ -106,7 +106,6 @@ class state:
     label, edge1, edge2, id= None, None, None, None
 
 
-
 class nfa:
     # initial nfa state, single accept state
     initial, accept = None, None
@@ -227,73 +226,6 @@ def visualize_nfa(nfa):
     dot.render('nfa_graph', view=True)
 
 
-
-def nfa_to_dfa(nfa, alphabet):
-    dfa_states = [{'initial'}]
-    dfa_transitions = {}
-    
-    while True:
-        new_states = []
-        for state in dfa_states:
-            for char in alphabet:
-                nfa_states = set()
-                for s in state:
-                    if s.transitions.get(char):
-                        nfa_states |= set(s.transitions[char])
-                
-                nfa_states = {s.name for s in nfa_states}
-                if nfa_states not in dfa_states:
-                    new_states.append(nfa_states)
-                
-                state_name = ','.join(sorted(state))
-                nfa_states_name = ','.join(sorted(nfa_states))
-                dfa_transitions[(state_name, char)] = nfa_states_name
-        
-        dfa_states += new_states
-        if not new_states:
-            break
-    dfa = DFA()
-    dfa.states = dfa_states
-    dfa.transitions = dfa_transitions
-    dfa.initial = dfa_states[0]
-    
-    return dfa
-
-
-
-def draw_dfa(dfa):
-  dot = graphviz.Digraph()
-  
-  for state in dfa.states:
-    if state == dfa.accept:
-      dot.node(state, shape='doublecircle')
-    else:
-      dot.node(state)
-
-  dot.node('initial', shape='none')
-  dot.edge('initial', dfa.initial)
-
-  for (state1, char), state2 in dfa.transitions.items():
-    dot.edge(state1, state2, label=char)
-
-  return dot
-
-
-
-# Ejemplo de uso
-exp = '(b|b)*.a.b.b.(a|b)*'
-infix = convert_optional(exp)
-infix,alfabeto = convertir_expresion(infix)
-print(infix)
-print(alfabeto)
-postfix = shunt(infix)
-print(postfix)
-nfa = compile(postfix)
-visualize_nfa(nfa)
-dfa = nfa_to_dfa(nfa, alfabeto)
-draw_dfa(dfa).render('dfa_graph', view=True)
-
-
 # Helper function - Returns set of states that can be reached from state following e arrows
 def followes(state):
     # Create a new set, with state as its only member
@@ -340,6 +272,97 @@ def match(infix, string):
 
     # Checks if the accept state is in the set for current state
     return (nfa.accept in current)
+
+
+class DFA:
+    def __init__(self):
+        self.states = set()
+        self.transitions = {}
+        self.initial = None
+        self.accept = set()
+
+
+def nfa_to_dfa(nfa, alphabet):
+    dfa = DFA()
+    initial_state = frozenset(followes(nfa.initial))
+    dfa.initial = initial_state
+    dfa.states.add(initial_state)
+
+    stack = [initial_state]
+
+    while stack:
+        current_state = stack.pop()
+        for char in alphabet:
+            next_states = set()
+            for nfa_state in current_state:
+                if nfa_state.label == char:
+                    next_states |= followes(nfa_state.edge1)
+            next_state = frozenset(next_states)
+            if next_state:
+                dfa.transitions[(current_state, char)] = next_state
+                if next_state not in dfa.states:
+                    dfa.states.add(next_state)
+                    stack.append(next_state)
+    
+    for state in dfa.states:
+        if nfa.accept in state:
+            dfa.accept.add(state)
+    
+    return dfa
+
+
+def label_states(states):
+    # Crear una lista de letras del alfabeto para asignar a los estados
+    alphabet = "abcdefghijklmnopqrstuvwxyz"
+    state_labels = {}
+
+    # Asignar una letra a cada estado
+    for i, state in enumerate(states):
+        if i < len(alphabet):
+            state_labels[state] = alphabet[i]
+        else:
+            # Si se agota el alfabeto, usa números
+            state_labels[state] = str(i)
+
+    return state_labels
+
+# Luego, puedes usar state_labels para asignar letras a los estados en el gráfico
+def draw_dfa(dfa):
+    dot = graphviz.Digraph(format='png')
+  
+    state_labels = label_states(dfa.states)  # Obtener el mapeo de estados a letras
+  
+    for state in dfa.states:
+        label = state_labels[state]
+        if state in dfa.accept:
+            dot.node(label, shape='doublecircle')
+        else:
+            dot.node(label)
+
+    initial_label = state_labels[dfa.initial]
+    dot.node('initial', shape='none')
+    dot.edge('initial', initial_label)
+
+    for (state1, char), state2 in dfa.transitions.items():
+        dot.edge(state_labels[state1], state_labels[state2], label=char)
+
+    return dot
+
+
+# Ejemplo de uso
+#exp = '(b|b)*.a.b.b.(a|b)*'
+exp = '(a|b)*.a.b.b'
+infix = convert_optional(exp)
+infix,alfabeto = convertir_expresion(infix)
+print(infix)
+print(alfabeto)
+postfix = shunt(infix)
+print(postfix)
+nfa = compile(postfix)
+visualize_nfa(nfa)
+dfa = nfa_to_dfa(nfa, alfabeto)
+state_labels = label_states(dfa.states)
+draw_dfa(dfa).render('dfa_graph', view=True)
 
 
 # Testcases for the matchString function
