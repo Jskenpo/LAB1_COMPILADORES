@@ -343,6 +343,23 @@ def match(string, nfa):
     # Checks if the accept state is in the set for current state
     return (nfa.accept in current)
 
+
+def match_dfa(dfa, w):
+
+  # Asignar nombres a los estados
+  state_labels = label_states(dfa.states)
+
+  # Estado inicial
+  current = dfa.initial
+
+  # Simular AFD con la cadena w
+  for char in w:
+    current = dfa.transitions[(current, char)]
+
+  # Verificar si está en un estado de aceptación
+  return current in dfa.accept
+
+
 # Ejemplo de uso
 exp = '(b|b)*.a.b.b.(a|b)*'
 #exp = '(a|b)*.a.b.b'
@@ -354,4 +371,5 @@ nfa = compile(postfix)
 dfa = nfa_to_dfa(nfa, alfabeto)
 state_labels = label_states(dfa.states)
 #draw_dfa(dfa).render('dfa_graph', view=True)
-print('el resultado de la simulasión es: ',match('bbabba', nfa))
+print('el resultado de la simulación del afd  es: ',match('bbabba', nfa))
+print('el resultado de la simulación del afd  es: ',match_dfa(dfa, 'bbbba'))
