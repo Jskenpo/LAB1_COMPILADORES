@@ -140,8 +140,8 @@ class nfa:
         self.transitions = transitions
         self.transiciones = transiciones
         return transiciones
-    
-    
+   
+
 def compile(pofix):
     # Creates new empty set
     nfaStack = []
@@ -222,6 +222,25 @@ def visualize_nfa(nfa):
     add_states_edges(nfa.initial, set())
 
     dot.render('nfa_graph', view=True)
+
+
+# Helper function - Returns set of states that can be reached from state following e arrows
+def followes(state):
+    # Create a new set, with state as its only member
+    states = set()
+    states.add(state)
+
+    # Check if state has arrows labelled e from it
+    if state.label is None:
+        # If there's an 'edge1', follow it
+        if state.edge1 is not None:
+            states |= followes(state.edge1)
+        # If there's an 'edge2', follow it
+        if state.edge2 is not None:
+            states |= followes(state.edge2)
+
+    # Returns the set of states
+    return states
 
 
 class DFA:
@@ -329,10 +348,7 @@ exp = '(b|b)*.a.b.b.(a|b)*'
 #exp = '(a|b)*.a.b.b'
 infix = convert_optional(exp)
 infix,alfabeto = convertir_expresion(infix)
-print(infix)
-print(alfabeto)
 postfix = shunt(infix)
-print(postfix)
 nfa = compile(postfix)
 #visualize_nfa(nfa)
 dfa = nfa_to_dfa(nfa, alfabeto)
