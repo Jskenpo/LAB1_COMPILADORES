@@ -13,8 +13,6 @@ Autores:
 '''
 
 import graphviz
-import re
-
 
 def convert_optional(regex):
     return regex.replace('?', '|E')
@@ -346,8 +344,17 @@ def simulacion_afd_minimizado(afd_minimizado, w):
     return actual in afd_minimizado.accept
 
 
-exp = '(b|b)*.a.b.b.(a|b)*'
-infix = convert_optional(exp)
+def leer_expresion_y_cadena(nombre_archivo):
+    with open(nombre_archivo, 'r') as archivo:
+        lineas = archivo.readlines()
+        expresion = lineas[0].strip()
+        cadena = lineas[1].strip()
+    return expresion, cadena
+
+nombre_archivo = 'expresion_cadena.txt'
+expresion, cadena = leer_expresion_y_cadena(nombre_archivo)
+
+infix = convert_optional(expresion)
 infix,alfabeto = convertir_expresion(infix)
 postfix = infix_postfix(infix)
 afn = postfix_afn(postfix)
@@ -357,6 +364,6 @@ estado_labels = label_estados(afd.estados)
 graficar_afd(afd).render('afd_graph', view=True)
 afd_min = minimizar_afd(afd)
 graficar_afd(afd_min).render('afd_minimizado_graph', view=True)
-print('el resultado de la simulación del afn  es:',simulacion_afn('bbabba', afn))
-print('el resultado de la simulación del afd  es:',simulacion_afd(afd, 'bbabba'))
-print('El resultado de la simulación del AFD minimizado es:', simulacion_afd_minimizado(afd_min, 'bbabba'))
+print('el resultado de la simulación del afn  es:',simulacion_afn(cadena, afn))
+print('el resultado de la simulación del afd  es:',simulacion_afd(afd, cadena))
+print('El resultado de la simulación del AFD minimizado es:', simulacion_afd_minimizado(afd_min, cadena))
