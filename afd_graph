@@ -1,0 +1,23 @@
+digraph {
+	a
+	b
+	c
+	d
+	e [shape=doublecircle]
+	f [shape=doublecircle]
+	g [shape=doublecircle]
+	inicial [shape=none]
+	inicial -> c
+	c -> b [label=b]
+	c -> d [label=a]
+	d -> a [label=b]
+	a -> g [label=b]
+	g -> f [label=b]
+	g -> e [label=a]
+	e -> f [label=b]
+	e -> e [label=a]
+	f -> f [label=b]
+	f -> e [label=a]
+	b -> b [label=b]
+	b -> d [label=a]
+}

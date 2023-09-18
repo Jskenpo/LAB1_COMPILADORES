@@ -1,3 +1,20 @@
+''' 
+Universidad del Valle
+Facultad de Ingeniería
+Ingeniería en Ciencia de la Computación y Tecnologías de la Información
+
+Teoria de la Computación 
+SECCION - 20
+
+
+Autores:
+    Jose Santisteban 21553
+    Sebastian Solorzano 21826
+    Manuel Rodas 21509
+
+'''
+
+
 import graphviz
 import re
 
@@ -47,11 +64,11 @@ def convertir_expresion(expresion):
     return ''.join(lista), alfabeto
 
 
-def shunt(infix):
+def infix_postfix(infix):
     
-    specials = {'*': 60, '.': 40, '|': 20}
+    caracteres_especiales = {'*': 60, '.': 40, '|': 20}
 
-    pofix, stack = "", ""  
+    exp_postfix, stack = "", ""  
 
     for c in infix:
         
@@ -61,99 +78,100 @@ def shunt(infix):
         elif c == ')':
            
             while stack[-1] != '(':  
-                pofix = pofix + stack[-1]  
+                exp_postfix = exp_postfix + stack[-1]  
                 stack = stack[:-1]  
             stack = stack[:-1]  
         
-        elif c in specials:
-            while stack and specials.get(c, 0) <= specials.get(stack[-1], 0):
-                pofix, stack = pofix + stack[-1], stack[:-1]
+        elif c in caracteres_especiales:
+            while stack and caracteres_especiales.get(c, 0) <= caracteres_especiales.get(stack[-1], 0):
+                exp_postfix, stack = exp_postfix + stack[-1], stack[:-1]
             stack = stack + c
 
         else:
-            pofix = pofix + c
+            exp_postfix = exp_postfix + c
 
     while stack:
-        pofix, stack = pofix + stack[-1], stack[:-1]
+        exp_postfix, stack = exp_postfix + stack[-1], stack[:-1]
 
-    return pofix
-
-
-class state:
-    # Note that each variable have been
-    # set to none to assign no value to each.
-    label, edge1, edge2, id= None, None, None, None
+    return exp_postfix
 
 
-class nfa:
-    initial, accept = None, None
+class estado:
+    label = None
+    transicion1 = None 
+    transicion2 = None 
+    id = None
 
-    def __init__(self, initial, accept):
-        self.initial, self.accept = initial, accept
+
+class afn:
+    inicial, accept = None, None
+
+    def __init__(self, inicial, accept):
+        self.inicial, self.accept = inicial, accept
 
     def get_all_transitions(self):
         transitions = []
-        estados = 0 # Contador de estados
+        estados = 0 
         transiciones = []
 
-        def visit(state):
+        def visit(estado):
             nonlocal transitions
             nonlocal estados 
             nonlocal transiciones
             estados += 1
-            if state.edge1 is not None:
-                transition = (state, state.label, state.edge1)
-                transiciones.append((estados,state.label, state.edge1))
+            if estado.transicion1 is not None:
+                transition = (estado, estado.label, estado.transicion1)
+                transiciones.append((estados,estado.label, estado.transicion1))
                 if transition not in transitions:
                     transitions.append(transition)
-                    visit(state.edge1)
-            if state.edge2 is not None:
-                transition = (state, state.label, state.edge2)
-                transiciones.append((estados,state.label, state.edge2))
+                    visit(estado.transicion1)
+            if estado.transicion2 is not None:
+                transition = (estado, estado.label, estado.transicion2)
+                transiciones.append((estados,estado.label, estado.transicion2))
                 if transition not in transitions:
                     transitions.append(transition)
-                    visit(state.edge2)
-        visit(self.initial)
+                    visit(estado.transicion2)
+        visit(self.inicial)
         self.transitions = transitions
         self.transiciones = transiciones
         return transiciones
    
 
-def compile(pofix):
-    nfaStack = []
+def postfix_afn(exp_postfix):
+    afnstack = []
 
-    for c in pofix:
+    for c in exp_postfix:
         if c == '*':
-            nfa1 = nfaStack.pop()
-            initial, accept = state(), state()
-            initial.edge1, initial.edge2 = nfa1.initial, accept
-            nfa1.accept.edge1, nfa1.accept.edge2 = nfa1.initial, accept
-            nfaStack.append(nfa(initial, accept))
+            afn1 = afnstack.pop()
+            inicial, accept = estado(), estado()
+            inicial.transicion1, inicial.transicion2 = afn1.inicial, accept
+            afn1.accept.transicion1, afn1.accept.transicion2 = afn1.inicial, accept
+            afnstack.append(afn(inicial, accept))
         elif c == '.':
-            nfa2, nfa1 = nfaStack.pop(), nfaStack.pop()
-            nfa1.accept.edge1 = nfa2.initial
-            nfaStack.append(nfa(nfa1.initial, nfa2.accept))
+            afn2, afn1 = afnstack.pop(), afnstack.pop()
+            afn1.accept.transicion1 = afn2.inicial
+            afnstack.append(afn(afn1.inicial, afn2.accept))
         elif c == '|':
-            nfa2, nfa1 = nfaStack.pop(), nfaStack.pop()
-            initial = state()
-            initial.edge1, initial.edge2 = nfa1.initial, nfa2.initial
-            accept = state()
-            nfa1.accept.edge1, nfa2.accept.edge1 = accept, accept
-            nfaStack.append(nfa(initial, accept))
+            afn2, afn1 = afnstack.pop(), afnstack.pop()
+            inicial = estado()
+            inicial.transicion1, inicial.transicion2 = afn1.inicial, afn2.inicial
+            accept = estado()
+            afn1.accept.transicion1, afn2.accept.transicion1 = accept, accept
+            afnstack.append(afn(inicial, accept))
         else:
-            accept, initial = state(), state()
-            initial.label, initial.edge1 = c, accept
-            nfaStack.append(nfa(initial, accept))
+            accept, inicial = estado(), estado()
+            inicial.label, inicial.transicion1 = c, accept
+            afnstack.append(afn(inicial, accept))
 
-    return nfaStack.pop()
+    return afnstack.pop()
 
 
-def visualize_nfa(nfa):
+def graficar_afn(afn):
     dot = graphviz.Digraph(format='png')
 
-    estados = 0  # Contador de estados
+    estados = 0  
 
-    def add_states_edges(node, visited):
+    def add_estados_edges(node, visited):
         nonlocal estados
         if node in visited:
             return
@@ -162,141 +180,132 @@ def visualize_nfa(nfa):
 
         dot.node(str(id(node)), label=f'q{estados}')
 
-        if node.edge1:
-            label = node.edge1.label if node.edge1.label else 'ε'
-            dot.edge(str(id(node)), str(id(node.edge1)), label=label)
-            add_states_edges(node.edge1, visited)
-        if node.edge2:
-            label = node.edge2.label if node.edge2.label else 'ε'
-            dot.edge(str(id(node)), str(id(node.edge2)), label=label)
-            add_states_edges(node.edge2, visited)
+        if node.transicion1:
+            label = node.transicion1.label if node.transicion1.label else 'ε'
+            dot.edge(str(id(node)), str(id(node.transicion1)), label=label)
+            add_estados_edges(node.transicion1, visited)
+        if node.transicion2:
+            label = node.transicion2.label if node.transicion2.label else 'ε'
+            dot.edge(str(id(node)), str(id(node.transicion2)), label=label)
+            add_estados_edges(node.transicion2, visited)
 
-    add_states_edges(nfa.initial, set())
+    add_estados_edges(afn.inicial, set())
 
-    dot.render('nfa_graph', view=True)
+    dot.render('afn_graph', view=True)
 
 
-def followes(state):
-    states = set()
-    states.add(state)
+def seguimiento(estado):
+    estados = set()
+    estados.add(estado)
 
-    if state.label is None:
+    if estado.label is None:
 
-        if state.edge1 is not None:
-            states |= followes(state.edge1)
+        if estado.transicion1 is not None:
+            estados |= seguimiento(estado.transicion1)
         
-        if state.edge2 is not None:
-            states |= followes(state.edge2)
+        if estado.transicion2 is not None:
+            estados |= seguimiento(estado.transicion2)
 
-    return states
+    return estados
 
 
-class DFA:
+class AFD:
     def __init__(self):
-        self.states = set()
+        self.estados = set()
         self.transitions = {}
-        self.initial = None
+        self.inicial = None
         self.accept = set()
 
 
-def nfa_to_dfa(nfa, alphabet):
-    dfa = DFA()
-    initial_state = frozenset(followes(nfa.initial))
-    dfa.initial = initial_state
-    dfa.states.add(initial_state)
+def afn_to_afd(afn, alphabet):
+    afd = AFD()
+    estado_inicial = frozenset(seguimiento(afn.inicial))
+    afd.inicial = estado_inicial
+    afd.estados.add(estado_inicial)
 
-    stack = [initial_state]
+    stack = [estado_inicial]
 
     while stack:
-        current_state = stack.pop()
+        actual_estado = stack.pop()
         for char in alphabet:
-            next_states = set()
-            for nfa_state in current_state:
-                if nfa_state.label == char:
-                    next_states |= followes(nfa_state.edge1)
-            next_state = frozenset(next_states)
-            if next_state:
-                dfa.transitions[(current_state, char)] = next_state
-                if next_state not in dfa.states:
-                    dfa.states.add(next_state)
-                    stack.append(next_state)
+            next_estados = set()
+            for afn_estado in actual_estado:
+                if afn_estado.label == char:
+                    next_estados |= seguimiento(afn_estado.transicion1)
+            next_estado = frozenset(next_estados)
+            if next_estado:
+                afd.transitions[(actual_estado, char)] = next_estado
+                if next_estado not in afd.estados:
+                    afd.estados.add(next_estado)
+                    stack.append(next_estado)
     
-    for state in dfa.states:
-        if nfa.accept in state:
-            dfa.accept.add(state)
+    for estado in afd.estados:
+        if afn.accept in estado:
+            afd.accept.add(estado)
     
-    return dfa
+    return afd
 
 
-def label_states(states):
-    # Crear una lista de letras del alfabeto para asignar a los estados
+def label_estados(estados):
     alphabet = "abcdefghijklmnopqrstuvwxyz"
-    state_labels = {}
+    estado_labels = {}
 
-    # Asignar una letra a cada estado
-    for i, state in enumerate(states):
+    for i, estado in enumerate(estados):
         if i < len(alphabet):
-            state_labels[state] = alphabet[i]
+            estado_labels[estado] = alphabet[i]
         else:
-            # Si se agota el alfabeto, usa números
-            state_labels[state] = str(i)
+            estado_labels[estado] = str(i)
 
-    return state_labels
+    return estado_labels
 
 
-def draw_dfa(dfa):
+def graficar_afd(afd):
     dot = graphviz.Digraph(format='png')
   
-    state_labels = label_states(dfa.states)  # Obtener el mapeo de estados a letras
+    estado_labels = label_estados(afd.estados)  
   
-    for state in dfa.states:
-        label = state_labels[state]
-        if state in dfa.accept:
+    for estado in afd.estados:
+        label = estado_labels[estado]
+        if estado in afd.accept:
             dot.node(label, shape='doublecircle')
         else:
             dot.node(label)
 
-    initial_label = state_labels[dfa.initial]
-    dot.node('initial', shape='none')
-    dot.edge('initial', initial_label)
+    inicial_label = estado_labels[afd.inicial]
+    dot.node('inicial', shape='none')
+    dot.edge('inicial', inicial_label)
 
-    for (state1, char), state2 in dfa.transitions.items():
-        dot.edge(state_labels[state1], state_labels[state2], label=char)
+    for (estado1, char), estado2 in afd.transitions.items():
+        dot.edge(estado_labels[estado1], estado_labels[estado2], label=char)
 
     return dot
 
 
-def match(string, nfa):
+def simulacion_afn(string, afn):
    
-    current = set()
-    nexts = set()
+    actual = set()
+    siguiente = set()
 
-    current |= followes(nfa.initial)
+    actual |= seguimiento(afn.inicial)
 
     for s in string:
         
-        for c in current:
+        for c in actual:
             if c.label == s:
-                nexts |= followes(c.edge1)
-        current = nexts
-        nexts = set()
-    return (nfa.accept in current)
+                siguiente |= seguimiento(c.transicion1)
+        actual = siguiente
+        siguiente = set()
+    return (afn.accept in actual)
 
 
-def match_dfa(dfa, w):
+def simulacion_afd(afd, w):
 
-  # Asignar nombres a los estados
-  state_labels = label_states(dfa.states)
+  estado_labels = label_estados(afd.estados)
+  actual = afd.inicial
 
-  # Estado inicial
-  current = dfa.initial
-
-  # Simular AFD con la cadena w
   for char in w:
-    current = dfa.transitions[(current, char)]
-
-  # Verificar si está en un estado de aceptación
-  return current in dfa.accept
+    actual = afd.transitions[(actual, char)]
+  return actual in afd.accept
 
 
 
@@ -305,11 +314,11 @@ exp = '(b|b)*.a.b.b.(a|b)*'
 #exp = '(a|b)*.a.b.b'
 infix = convert_optional(exp)
 infix,alfabeto = convertir_expresion(infix)
-postfix = shunt(infix)
-nfa = compile(postfix)
-#visualize_nfa(nfa)
-dfa = nfa_to_dfa(nfa, alfabeto)
-state_labels = label_states(dfa.states)
-#draw_dfa(dfa).render('dfa_graph', view=True)
-#print('el resultado de la simulación del afn  es: ',match('bbabba', nfa))
-#print('el resultado de la simulación del afd  es: ',match_dfa(dfa, 'bbabba'))
+postfix = infix_postfix(infix)
+afn = postfix_afn(postfix)
+graficar_afn(afn)
+afd = afn_to_afd(afn, alfabeto)
+estado_labels = label_estados(afd.estados)
+graficar_afd(afd).render('afd_graph', view=True)
+print('el resultado de la simulación del afn  es: ',simulacion_afn('bbabba', afn))
+print('el resultado de la simulación del afd  es: ',simulacion_afd(afd, 'bbabba'))
