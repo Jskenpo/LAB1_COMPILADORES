@@ -1,7 +1,7 @@
 # PROYECTO 1 TEORÍA DE LA COMPUTACIÓN 
 
 ## Creacion de Máquinas de estado finito
-En este repositorio se puede observar la construcción autómatas finitos no deterministas y deterministas mediante una expresión regular. Asimisso se generan graficas en forma de imagenes parra poder visualizar los diferentes autómatas de mejor manera, finalmente se puede probar si una cadena w  pertenece al lenguaje del autómta.
+En este repositorio se puede observar la construcción autómatas finitos no deterministas y deterministas mediante una expresión regular. Asimismso se generan graficas en forma de imágenes para poder visualizar los diferentes autómatas de mejor manera, finalmente se puede probar si una cadena w  pertenece al lenguaje del autómta.
 
 ## Consideraciones
 El linput que se realiza para la construcción de los autómatas tiene que tener una concatenación explícita, es decir:
