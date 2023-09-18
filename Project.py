@@ -1,19 +1,16 @@
 ''' 
-Universidad del Valle
+Universidad del Valle de Guatemala
 Facultad de Ingeniería
 Ingeniería en Ciencia de la Computación y Tecnologías de la Información
 
 Teoria de la Computación 
 SECCION - 20
 
-
 Autores:
     Jose Santisteban 21553
     Sebastian Solorzano 21826
     Manuel Rodas 21509
-
 '''
-
 
 import graphviz
 import re
@@ -35,7 +32,6 @@ def convertir_expresion(expresion):
 
     alfabeto.append('')
     
-
         
     for i in range(len(lista)):
         if i > 0:
@@ -65,28 +61,21 @@ def convertir_expresion(expresion):
 
 
 def infix_postfix(infix):
-    
     caracteres_especiales = {'*': 60, '.': 40, '|': 20}
-
     exp_postfix, stack = "", ""  
 
-    for c in infix:
-        
+    for c in infix:        
         if c == '(':
             stack = stack + c 
-
         elif c == ')':
-           
             while stack[-1] != '(':  
                 exp_postfix = exp_postfix + stack[-1]  
                 stack = stack[:-1]  
             stack = stack[:-1]  
-        
         elif c in caracteres_especiales:
             while stack and caracteres_especiales.get(c, 0) <= caracteres_especiales.get(stack[-1], 0):
                 exp_postfix, stack = exp_postfix + stack[-1], stack[:-1]
             stack = stack + c
-
         else:
             exp_postfix = exp_postfix + c
 
@@ -168,7 +157,6 @@ def postfix_afn(exp_postfix):
 
 def graficar_afn(afn):
     dot = graphviz.Digraph(format='png')
-
     estados = 0  
 
     def add_estados_edges(node, visited):
@@ -199,13 +187,10 @@ def seguimiento(estado):
     estados.add(estado)
 
     if estado.label is None:
-
         if estado.transicion1 is not None:
             estados |= seguimiento(estado.transicion1)
-        
         if estado.transicion2 is not None:
             estados |= seguimiento(estado.transicion2)
-
     return estados
 
 
@@ -222,7 +207,6 @@ def afn_to_afd(afn, alphabet):
     estado_inicial = frozenset(seguimiento(afn.inicial))
     afd.inicial = estado_inicial
     afd.estados.add(estado_inicial)
-
     stack = [estado_inicial]
 
     while stack:
@@ -261,7 +245,6 @@ def label_estados(estados):
 
 def graficar_afd(afd):
     dot = graphviz.Digraph(format='png')
-  
     estado_labels = label_estados(afd.estados)  
   
     for estado in afd.estados:
@@ -281,15 +264,59 @@ def graficar_afd(afd):
     return dot
 
 
-def simulacion_afn(string, afn):
-   
+def minimizar_afd(afd):
+    marcados = {}
+    for estado1 in afd.estados:
+        for estado2 in afd.estados:
+            if estado1 != estado2 and ((estado1 in afd.accept and estado2 not in afd.accept) or (estado1 not in afd.accept and estado2 in afd.accept)):
+                marcados[(estado1, estado2)] = True
+            else:
+                marcados[(estado1, estado2)] = False
+
+    cambiado = True
+    while cambiado:
+        cambiado = False
+        for estado1 in afd.estados:
+            for estado2 in afd.estados:
+                if not marcados[(estado1, estado2)]:
+                    for char in alfabeto:
+                        siguiente_estado1 = afd.transitions.get((estado1, char), None)
+                        siguiente_estado2 = afd.transitions.get((estado2, char), None)
+                        if siguiente_estado1 is not None and siguiente_estado2 is not None and marcados[(siguiente_estado1, siguiente_estado2)]:
+                            marcados[(estado1, estado2)] = True
+                            cambiado = True
+
+    afd_minimizado = AFD()
+    mapeo_estados = {}
+
+    for estado in afd.estados:
+        if estado not in mapeo_estados:
+            mapeo_estados[estado] = frozenset([estado])
+            if estado in afd.accept:
+                afd_minimizado.accept.add(mapeo_estados[estado])
+            afd_minimizado.estados.add(mapeo_estados[estado])
+
+        for char in alfabeto:
+            siguiente_estado = afd.transitions.get((estado, char), None)
+            if siguiente_estado is not None:
+                if siguiente_estado not in mapeo_estados:
+                    mapeo_estados[siguiente_estado] = frozenset([siguiente_estado])
+                    if siguiente_estado in afd.accept:
+                        afd_minimizado.accept.add(mapeo_estados[siguiente_estado])
+                    afd_minimizado.estados.add(mapeo_estados[siguiente_estado])
+                afd_minimizado.transitions[(mapeo_estados[estado], char)] = mapeo_estados[siguiente_estado]
+
+    afd_minimizado.inicial = mapeo_estados[afd.inicial]
+
+    return afd_minimizado
+
+
+def simulacion_afn(string, afn):   
     actual = set()
     siguiente = set()
-
     actual |= seguimiento(afn.inicial)
 
     for s in string:
-        
         for c in actual:
             if c.label == s:
                 siguiente |= seguimiento(c.transicion1)
@@ -299,19 +326,27 @@ def simulacion_afn(string, afn):
 
 
 def simulacion_afd(afd, w):
+    estado_labels = label_estados(afd.estados)
+    actual = afd.inicial
 
-  estado_labels = label_estados(afd.estados)
-  actual = afd.inicial
-
-  for char in w:
-    actual = afd.transitions[(actual, char)]
-  return actual in afd.accept
+    for char in w:
+        actual = afd.transitions[(actual, char)]
+    
+    return actual in afd.accept
 
 
+def simulacion_afd_minimizado(afd_minimizado, w):
+    actual = afd_minimizado.inicial
 
-# Ejemplo de uso
+    for char in w:
+        actual = afd_minimizado.transitions.get((actual, char), None)
+        if actual is None:
+            return False
+
+    return actual in afd_minimizado.accept
+
+
 exp = '(b|b)*.a.b.b.(a|b)*'
-#exp = '(a|b)*.a.b.b'
 infix = convert_optional(exp)
 infix,alfabeto = convertir_expresion(infix)
 postfix = infix_postfix(infix)
@@ -320,5 +355,8 @@ graficar_afn(afn)
 afd = afn_to_afd(afn, alfabeto)
 estado_labels = label_estados(afd.estados)
 graficar_afd(afd).render('afd_graph', view=True)
-print('el resultado de la simulación del afn  es: ',simulacion_afn('bbabba', afn))
-print('el resultado de la simulación del afd  es: ',simulacion_afd(afd, 'bbabba'))
+afd_min = minimizar_afd(afd)
+graficar_afd(afd_min).render('afd_minimizado_graph', view=True)
+print('el resultado de la simulación del afn  es:',simulacion_afn('bbabba', afn))
+print('el resultado de la simulación del afd  es:',simulacion_afd(afd, 'bbabba'))
+print('El resultado de la simulación del AFD minimizado es:', simulacion_afd_minimizado(afd_min, 'bbabba'))
