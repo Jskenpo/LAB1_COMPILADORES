@@ -7,17 +7,13 @@ digraph {
 	f
 	g [shape=doublecircle]
 	inicial [shape=none]
-	inicial -> f
-	b -> g [label=b]
-	b -> c [label=a]
-	a -> b [label=b]
-	d -> a [label=b]
-	c -> g [label=b]
-	c -> c [label=a]
-	g -> g [label=b]
-	g -> c [label=a]
-	e -> e [label=b]
-	e -> d [label=a]
-	f -> e [label=b]
+	inicial -> c
+	f -> f [label=b]
 	f -> d [label=a]
+	d -> e [label=b]
+	c -> f [label=b]
+	c -> d [label=a]
+	a -> g [label=b]
+	a -> b [label=a]
+	e -> a [label=b]
 }

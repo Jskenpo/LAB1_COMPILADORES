@@ -1,2 +1,2 @@
-(b|b)*.a.b.b.(a|b)*
+(b|b)*.a.b.b.(a|b)?
 bbabba

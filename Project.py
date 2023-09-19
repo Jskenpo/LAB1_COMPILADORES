@@ -126,6 +126,7 @@ class afn:
 
 def postfix_afn(exp_postfix):
     afnstack = []
+    epsilon = 'E'
 
     for c in exp_postfix:
         if c == '*':
@@ -144,6 +145,11 @@ def postfix_afn(exp_postfix):
             inicial.transicion1, inicial.transicion2 = afn1.inicial, afn2.inicial
             accept = estado()
             afn1.accept.transicion1, afn2.accept.transicion1 = accept, accept
+            afnstack.append(afn(inicial, accept))
+        
+        elif c == 'E':
+            accept, inicial = estado(), estado()
+            inicial.transicion1 = accept
             afnstack.append(afn(inicial, accept))
         else:
             accept, inicial = estado(), estado()
