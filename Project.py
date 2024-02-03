@@ -3,22 +3,19 @@ Universidad del Valle de Guatemala
 Facultad de Ingeniería
 Ingeniería en Ciencia de la Computación y Tecnologías de la Información
 
-Teoria de la Computación 
-SECCION - 20
 
 Autores:
     Jose Santisteban 21553
-    Sebastian Solorzano 21826
-    Manuel Rodas 21509
 '''
 
 import graphviz
+from graphviz import Digraph
 
-def convert_optional(regex):
-    return regex.replace('?', '|E')
-
+def convertFirst(expresion):
+    return expresion.replace('?', '|E')
 
 def convertir_expresion(expresion):
+    
     lista = list(expresion)
     alfabeto = []
     operandos = ['+','.','*','|','(',')','[',']','{','}','?']
@@ -36,7 +33,7 @@ def convertir_expresion(expresion):
             before = lista[i - 1]
             if lista[i] == '+':
                 if before not in ')]}':
-                    lista[i - 1] = lista[i - 1] + lista[i - 1] + '*'
+                    lista[i - 1] = lista[i - 1] +lista[i - 1] + '*'
                 else:
                     almacen = []
                     aperturas = 0
@@ -53,10 +50,27 @@ def convertir_expresion(expresion):
                             break
                     almacen.reverse()
                     lista[i] = ''.join(almacen) + '*'
+    
     if '+' in lista:
         lista.remove('+')
-    return ''.join(lista), alfabeto
 
+    #vueva epxpresion 
+    expr = ''.join(lista)
+
+    return expr, alfabeto
+
+def _implicit_to_explicit(regex: str) -> str:
+    
+    new_regex = ''
+    for i in range(len(regex) - 1):
+        if regex[i] not in ['(', '|', '.'] and regex[i + 1] not in [')', '|', '*', '.']:
+            new_regex += regex[i] + '.'  # Agregar concatenación explícita
+        else:
+            new_regex += regex[i]  # Agregar el caracter normal
+
+    new_regex += regex[-1]  # Agregar el último caracter
+
+    return new_regex
 
 def infix_postfix(infix):
     caracteres_especiales = {'*': 60, '.': 40, '|': 20}
@@ -81,6 +95,121 @@ def infix_postfix(infix):
         exp_postfix, stack = exp_postfix + stack[-1], stack[:-1]
 
     return exp_postfix
+
+
+#creacion de arbol sintactico 
+
+class NodoAST:
+    def __init__(self, valor, identificador ):
+        self.id = identificador
+        self.valor = valor
+        self.izquierda = None
+        self.derecha = None
+        self.nulable = False 
+        self.PrimeraPos = set()
+        self.UltimaPos = set()
+        self.follows = set()
+
+
+
+def construir_AST(exp_postfix):
+    stack = []
+    exp_postfix = exp_postfix + '#.'
+    identificador = 1
+    for token in exp_postfix:
+        nodo = NodoAST(token,identificador)
+        identificador += 1
+        if token in ['.', '|', '*', '+', '?']:
+            nodo.derecha = stack.pop()
+            if token not in ['*', '+', '?']:
+                nodo.izquierda = stack.pop()
+        stack.append(nodo)
+
+    if len(stack) != 1:
+        raise ValueError("Expresión no válida")
+
+    return stack[0]
+
+def dibujar_AST(nodo, dot=None):
+    if dot is None:
+        dot = Digraph()
+    
+    # Agregar nodo con valor e identificador
+    dot.node(str(id(nodo)), f"{nodo.valor}\nNulable:{nodo.nulable} \nID: {nodo.id}\nPP: {nodo.PrimeraPos}\nUP: {nodo.UltimaPos}")
+    if nodo.izquierda is not None:
+        dot.node(str(id(nodo.izquierda)), nodo.izquierda.valor)
+        dot.edge(str(id(nodo)), str(id(nodo.izquierda)))
+        dibujar_AST(nodo.izquierda, dot)
+    if nodo.derecha is not None:
+        dot.node(str(id(nodo.derecha)), nodo.derecha.valor)
+        dot.edge(str(id(nodo)), str(id(nodo.derecha)))
+        dibujar_AST(nodo.derecha, dot)
+    return dot
+
+def calcular_nulabilidad(nodo):
+    if nodo is None:
+        return
+
+    calcular_nulabilidad(nodo.izquierda)
+    calcular_nulabilidad(nodo.derecha)
+
+    if nodo.valor == 'E':
+        nodo.nulable = True
+    elif nodo.valor == '.':
+        nodo.nulable = nodo.izquierda.nulable and nodo.derecha.nulable
+    elif nodo.valor == '|':
+        nodo.nulable = nodo.izquierda.nulable or nodo.derecha.nulable
+    elif nodo.valor == '*':
+        nodo.nulable = True
+
+def obtener_nulables(nodo, nulables=None):
+    if nulables is None:
+        nulables = []
+
+    if nodo is None:
+        return
+
+    obtener_nulables(nodo.izquierda, nulables)
+    obtener_nulables(nodo.derecha, nulables)
+
+    if nodo.nulable:
+        nulables.append(nodo)
+
+    return nulables
+
+def obtener_primera_pos(nodo):
+    if nodo is None:
+        return set()
+
+    primera_pos = set()
+
+    if nodo.valor == '.':
+        if nodo.izquierda is not None:
+            primera_pos |= nodo.izquierda.PrimeraPos
+
+            # Si el hijo izquierdo es nulable, también necesitamos agregar la primera posición del hijo derecho
+            if nodo.izquierda.nulable:
+                primera_pos |= nodo.derecha.PrimeraPos
+
+    elif nodo.valor == '|':
+        if nodo.izquierda is not None and nodo.derecha is not None:
+            primera_pos |= nodo.izquierda.PrimeraPos | nodo.derecha.PrimeraPos
+
+    elif nodo.valor == '*':
+        if nodo.izquierda is not None:
+            primera_pos |= nodo.izquierda.PrimeraPos
+
+    # Regla para hoja con posición i
+    elif nodo.id is not None:
+        primera_pos.add(nodo.id)
+
+    primera_pos |= obtener_primera_pos(nodo.izquierda)
+    primera_pos |= obtener_primera_pos(nodo.derecha)
+
+    nodo.PrimeraPos = primera_pos
+    return primera_pos
+
+
 
 
 class estado:
@@ -359,10 +488,29 @@ def leer_expresion_y_cadena(nombre_archivo):
 
 nombre_archivo = 'expresion_cadena.txt'
 expresion, cadena = leer_expresion_y_cadena(nombre_archivo)
+print('La expresión regular es:', expresion)
+expresion = convertFirst(expresion)
+infix,alfabeto = convertir_expresion(expresion)
+explicit = _implicit_to_explicit(infix)
+print('La expresión regular en notación infix es:', explicit)
+postfix = infix_postfix(explicit)
+ast = construir_AST(postfix)
+calcular_nulabilidad(ast)
+nulables = obtener_nulables(ast)
+obtener_primera_pos(ast)
+dot = dibujar_AST(ast)
+dot.render('ast', format='png', cleanup=True, view=True)
 
-infix = convert_optional(expresion)
-infix,alfabeto = convertir_expresion(infix)
-postfix = infix_postfix(infix)
+
+print('La expresión regular en notación postfix es:', postfix)
+
+print("Nodos nulables:")
+for i, nodo in enumerate(nulables):
+    print(f"Nodo {i+1}: {nodo.valor} (ID: {nodo.id})")
+
+
+
+'''
 afn = postfix_afn(postfix)
 graficar_afn(afn)
 afd = afn_to_afd(afn, alfabeto)
@@ -373,3 +521,4 @@ graficar_afd(afd_min).render('afd_minimizado_graph', view=True)
 print('el resultado de la simulación del afn  es:',simulacion_afn(cadena, afn))
 print('el resultado de la simulación del afd  es:',simulacion_afd(afd, cadena))
 print('El resultado de la simulación del AFD minimizado es:', simulacion_afd_minimizado(afd_min, cadena))
+'''

@@ -1,19 +1,19 @@
 digraph {
 	a
 	b [shape=doublecircle]
-	c [shape=doublecircle]
+	c
 	d
-	e
+	e [shape=doublecircle]
 	f
 	g [shape=doublecircle]
 	inicial [shape=none]
-	inicial -> c
-	f -> f [label=b]
-	f -> d [label=a]
-	d -> e [label=b]
-	c -> f [label=b]
+	inicial -> b
+	c -> c [label=b]
 	c -> d [label=a]
-	a -> g [label=b]
-	a -> b [label=a]
-	e -> a [label=b]
+	f -> a [label=b]
+	b -> c [label=b]
+	b -> d [label=a]
+	d -> f [label=b]
+	a -> e [label=b]
+	a -> g [label=a]
 }
