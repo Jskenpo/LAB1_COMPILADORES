@@ -1,2 +1,2 @@
-(a|b)+abb
-abbbba
+(a|b)*abb
+abbabb
