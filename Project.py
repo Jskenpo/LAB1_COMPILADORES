@@ -57,14 +57,7 @@ def leer_expresion_y_cadena(nombre_archivo):
         cadena = lineas[1].strip()
     return expresion, cadena
 
-def calculo_AST(postfix):
-    ast = construir_AST(postfix)
-    calcular_nulabilidad(ast)
-    nulables = obtener_nulables(ast)
-    obtener_primera_pos(ast)
-    obtener_ultima_pos(ast)
-    calcular_followpos(ast)
-    return ast, nulables
+
 
 nombre_archivo = 'expresion_cadena.txt'
 expresion, cadena = leer_expresion_y_cadena(nombre_archivo)
@@ -74,7 +67,12 @@ infix,alfabeto = convertir_expresion(expresion)
 explicit = implicit_to_explicit(infix)
 print('La expresión regular en notación infix es:', explicit)
 postfix = infix_postfix(explicit)
-ast, nulables = construir_AST(postfix)
+ast = construir_AST(postfix)
+calcular_nulabilidad(ast)
+nulables = obtener_nulables(ast)
+obtener_primera_pos(ast)
+obtener_ultima_pos(ast)
+calcular_followpos(ast)
 dot = dibujar_AST(ast)
 dot.render('ast', format='png', view=True)
 print('La expresión regular en notación postfix es:', postfix)
