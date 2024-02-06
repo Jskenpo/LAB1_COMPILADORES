@@ -35,7 +35,6 @@ def dibujar_AST(nodo, dot=None):
     if dot is None:
         dot = Digraph()
     
-    # Agregar nodo con valor e identificador
     dot.node(str(id(nodo)), f"{nodo.valor}\nNulable:{nodo.nulable} \nID: {nodo.id}\nPP: {nodo.PrimeraPos}\nUP: {nodo.UltimaPos}\n FP: {nodo.follows}")
     if nodo.izquierda is not None:
         dot.node(str(id(nodo.izquierda)), nodo.izquierda.valor)

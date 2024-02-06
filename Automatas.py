@@ -121,6 +121,24 @@ class AFD:
         self.inicial = None
         self.accept = set()
 
+    def agregar_transicion(self, estado_origen, simbolo, estado_destino):
+        if estado_origen not in self.transitions:
+            self.transitions[estado_origen] = {}
+        self.transitions[estado_origen][simbolo] = estado_destino
+
+    def agregar_estado(self, estado):
+        self.estados.add(estado)
+
+    def establecer_estado_inicial(self, estado):
+        self.inicial = estado
+
+    def agregar_estado_aceptacion(self, estado):
+        self.accept.add(estado)
+
+
+
+
+
 
 def afn_to_afd(afn, alphabet):
     afd = AFD()
@@ -228,6 +246,14 @@ def minimizar_afd(afd):
     minimized_afd.accept = set([str(s) for s in minimized_accept_states])
 
     return minimized_afd
+
+
+#construir afd con el metodo de construcción directa
+
+
+
+
+
 
 
 def simulacion_afn(string, afn):   

@@ -58,6 +58,9 @@ def leer_expresion_y_cadena(nombre_archivo):
     return expresion, cadena
 
 
+'''
+PREPROCESAMIENTO DE LA EXPRESIÓN REGULAR
+'''
 
 nombre_archivo = 'expresion_cadena.txt'
 expresion, cadena = leer_expresion_y_cadena(nombre_archivo)
@@ -67,6 +70,11 @@ infix,alfabeto = convertir_expresion(expresion)
 explicit = implicit_to_explicit(infix)
 print('La expresión regular en notación infix es:', explicit)
 postfix = infix_postfix(explicit)
+
+'''
+CONSTRUCIÓN DE ARBOL SINTÁCTICO ABSTRACTO, NULABILIDAD DE NODOS, PRIMERA POS, ÚLTIMA POS Y FOLLOWPOS
+'''
+
 ast = construir_AST(postfix)
 calcular_nulabilidad(ast)
 nulables = obtener_nulables(ast)
@@ -75,7 +83,13 @@ obtener_ultima_pos(ast)
 calcular_followpos(ast)
 dot = dibujar_AST(ast)
 dot.render('ast', format='png', view=True)
+
+'''
+CONSTRUCCIÓN DE AUTÓMATA FINITO NO DETERMINISTA, AUTÓMATA FINITO DETERMINISTA Y AUTÓMATA FINITO DETERMINISTA MINIMIZADO
+'''
+
 print('La expresión regular en notación postfix es:', postfix)
+'''
 afn = postfix_afn(postfix)
 graficar_afn(afn)
 afd = afn_to_afd(afn, alfabeto)
@@ -83,7 +97,16 @@ estado_labels = label_estados(afd.estados)
 graficar_afd(afd).render('afd_graph', view=True)
 afd_min = minimizar_afd(afd)
 graficar_afd(afd_min).render('afd_minimizado_graph', view=True)
+'''
+direct_afd = afd_directo(ast, alfabeto)
+graficar_afd(direct_afd).render('afd_directo_graph', view=True)
+
+'''
+SIMULACIÓN DE AUTÓMATAS
+'''
+'''
 print('el resultado de la simulación del afn  es:',simulacion_afn(cadena, afn))
 print('el resultado de la simulación del afd  es:',simulacion_afd(afd, cadena))
 print('El resultado de la simulación del AFD minimizado es:', simulacion_afd_minimizado(afd_min, cadena))
 
+'''
