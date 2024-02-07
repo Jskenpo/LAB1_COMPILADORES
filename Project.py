@@ -24,11 +24,13 @@ def calcular_followpos(nodo):
         for i in nodo.izquierda.UltimaPos:
             nodo_izquierda = obtener_nodo_por_id(ast, i)
             nodo_izquierda.follows |= nodo.derecha.PrimeraPos
+            nodo_izquierda.NodosF |= nodo.derecha.NodosPP
 
     elif nodo.valor == '*':
         for i in nodo.UltimaPos:
             pos_node = obtener_nodo_por_id(ast, i)
             pos_node.follows |= nodo.PrimeraPos
+            pos_node.NodosF |= nodo.NodosPP
 
     calcular_followpos(nodo.izquierda)
     calcular_followpos(nodo.derecha)
@@ -81,6 +83,7 @@ nulables = obtener_nulables(ast)
 obtener_primera_pos(ast)
 obtener_ultima_pos(ast)
 calcular_followpos(ast)
+
 dot = dibujar_AST(ast)
 dot.render('ast', format='png', view=True)
 
@@ -97,14 +100,18 @@ estado_labels = label_estados(afd.estados)
 graficar_afd(afd).render('afd_graph', view=True)
 afd_min = minimizar_afd(afd)
 graficar_afd(afd_min).render('afd_minimizado_graph', view=True)
+
+lista_nodos = recorrer_ast(ast)
+print(lista_nodos)
 '''
-direct_afd = afd_directo(ast, alfabeto)
-graficar_afd(direct_afd).render('afd_directo_graph', view=True)
+afd_directo = direct_afd(ast,alfabeto)
+imprimir_afd(afd_directo)
+
 
 '''
 SIMULACIÓN DE AUTÓMATAS
-'''
-'''
+
+
 print('el resultado de la simulación del afn  es:',simulacion_afn(cadena, afn))
 print('el resultado de la simulación del afd  es:',simulacion_afd(afd, cadena))
 print('El resultado de la simulación del AFD minimizado es:', simulacion_afd_minimizado(afd_min, cadena))

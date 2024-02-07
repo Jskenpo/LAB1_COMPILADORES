@@ -113,7 +113,6 @@ def seguimiento(estado):
             estados |= seguimiento(estado.transicion2)
     return estados
 
-
 class AFD:
     def __init__(self):
         self.estados = set()
@@ -127,17 +126,14 @@ class AFD:
         self.transitions[estado_origen][simbolo] = estado_destino
 
     def agregar_estado(self, estado):
-        self.estados.add(estado)
+        # Convertir el conjunto a una tupla antes de agregarlo
+        self.estados.add(tuple(sorted(estado)))
 
     def establecer_estado_inicial(self, estado):
-        self.inicial = estado
+        self.inicial = tuple(sorted(estado))
 
     def agregar_estado_aceptacion(self, estado):
-        self.accept.add(estado)
-
-
-
-
+        self.accept.add(tuple(sorted(estado)))
 
 
 def afn_to_afd(afn, alphabet):
@@ -247,8 +243,84 @@ def minimizar_afd(afd):
 
     return minimized_afd
 
+def recorrer_ast(nodo, valores_ast=None):
+    if valores_ast is None:
+        valores_ast = {}
 
-#construir afd con el metodo de construcción directa
+    if nodo is None:
+        return valores_ast
+
+    if nodo.follows != set():
+        valores_ast[nodo.id] = {
+            'PrimeraPos': nodo.PrimeraPos,
+            'UltimaPos': nodo.UltimaPos,
+            'nulable': nodo.nulable,
+            'follows': nodo.follows
+        }
+
+    recorrer_ast(nodo.izquierda, valores_ast)
+    recorrer_ast(nodo.derecha, valores_ast)
+
+    # Ordenar el diccionario por el id de manera ascendente
+    valores_ast = dict(sorted(valores_ast.items(), key=lambda item: item[0]))
+
+
+    return valores_ast
+
+
+def direct_afd(root,alfabeto):
+
+    #eliminar del lfabeto la cadena vacia 
+
+    alfabeto.remove('')
+
+    # Obtener s0
+    s0 = root.NodosPP
+    
+    # Crear el AFD
+    afd = AFD()
+    afd.agregar_estado(root.PrimeraPos)
+    afd.establecer_estado_inicial(root.PrimeraPos)
+    labels = [root.PrimeraPos]
+    # Dstates es una lista de conjuntos de nodos
+    Dstates = [s0]
+    marked_states = set()  # Conjunto de estados marcados
+
+    # Mientras haya estados no marcados en Dstates
+    while Dstates:
+        # Obtener un estado no marcado
+        T = Dstates.pop()
+        L = labels.pop()
+        
+        # Marcar el estado
+        marked_states.add(tuple(sorted(T)))
+
+        for symbol in alfabeto:
+            U = set()
+            U_labels = set()
+
+            # Calcular la unión de followpos(p) para todas las posiciones p en T
+            for node in T:
+                if node.valor == symbol:
+                    U |= node.NodosF
+                    U_labels |= node.follows
+
+            # Si U no está vacío y no está en Dstates ni en marked_states, agregarlo como estado no marcado a Dstates
+            if U and tuple(sorted(U)) not in Dstates and tuple(sorted(U)) not in marked_states:
+                afd.agregar_estado(U_labels)
+                Dstates.append(U)
+                labels.append(U_labels)
+
+            # Establecer la transición desde T con el símbolo 'symbol' a U
+            afd.agregar_transicion(tuple(sorted(L)), symbol, tuple(sorted(U_labels)))
+
+    # Establecer los estados de aceptación
+    for estado in afd.estados:
+        for nodo in estado:
+            if nodo in root.follows:
+                afd.agregar_estado_aceptacion(estado)
+                break
+    return afd
 
 
 
@@ -289,3 +361,20 @@ def simulacion_afd_minimizado(afd_minimizado, w):
             return False
 
     return actual in afd_minimizado.accept
+
+def imprimir_afd(afd):
+    print("Estados:")
+    for estado in afd.estados:
+        print(estado)
+    
+    print("\nTransiciones:")
+    for origen, transiciones in afd.transitions.items():
+        for simbolo, destino in transiciones.items():
+            print(f"Dtran[{origen}, {simbolo}] = {destino}")
+
+    print("\nEstado inicial:")
+    print(afd.inicial)
+
+    print("\nEstados de aceptación:")
+    for estado in afd.accept:
+        print(estado)
