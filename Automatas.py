@@ -267,7 +267,6 @@ def recorrer_ast(nodo, valores_ast=None):
 
     return valores_ast
 
-
 def direct_afd(root,alfabeto):
 
     #eliminar del lfabeto la cadena vacia 
@@ -314,19 +313,13 @@ def direct_afd(root,alfabeto):
             # Establecer la transición desde T con el símbolo 'symbol' a U
             afd.agregar_transicion(tuple(sorted(L)), symbol, tuple(sorted(U_labels)))
 
+            for nodo in U:
+                if nodo.valor == '#':
+                    afd.agregar_estado_aceptacion(U_labels)
+           
+
     # Establecer los estados de aceptación
-    for estado in afd.estados:
-        for nodo in estado:
-            if nodo in root.follows:
-                afd.agregar_estado_aceptacion(estado)
-                break
     return afd
-
-
-
-
-
-
 
 def simulacion_afn(string, afn):   
     actual = set()
@@ -341,7 +334,6 @@ def simulacion_afn(string, afn):
         siguiente = set()
     return (afn.accept in actual)
 
-
 def simulacion_afd(afd, w):
     estado_labels = label_estados(afd.estados)
     actual = afd.inicial
@@ -350,7 +342,6 @@ def simulacion_afd(afd, w):
         actual = afd.transitions[(actual, char)]
     
     return actual in afd.accept
-
 
 def simulacion_afd_minimizado(afd_minimizado, w):
     actual = afd_minimizado.inicial
@@ -378,3 +369,29 @@ def imprimir_afd(afd):
     print("\nEstados de aceptación:")
     for estado in afd.accept:
         print(estado)
+
+def graficar_direct_afd(afd):
+    dot = graphviz.Digraph(format = 'png')
+
+    # Agregar nodos
+    for estado in afd.estados:
+        if estado in afd.accept:
+            dot.node(str(estado), shape='doublecircle')
+        elif estado == afd.inicial:
+            dot.node(str(estado), shape='circle', style='bold')
+        else:
+            dot.node(str(estado), shape='circle')
+
+    # Agregar transiciones
+    for origen, transiciones in afd.transitions.items():
+        for simbolo, destino in transiciones.items():
+            dot.edge(str(origen), str(destino), label=str(simbolo))
+
+    # Añadir flecha indicando cual es el estado inicial 
+    dot.node('inicial', shape='none')
+    dot.edge('inicial', str(afd.inicial), label='inicio')
+    
+    
+    return dot
+
+

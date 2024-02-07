@@ -92,7 +92,7 @@ CONSTRUCCIÓN DE AUTÓMATA FINITO NO DETERMINISTA, AUTÓMATA FINITO DETERMINISTA
 '''
 
 print('La expresión regular en notación postfix es:', postfix)
-'''
+
 afn = postfix_afn(postfix)
 graficar_afn(afn)
 afd = afn_to_afd(afn, alfabeto)
@@ -101,19 +101,18 @@ graficar_afd(afd).render('afd_graph', view=True)
 afd_min = minimizar_afd(afd)
 graficar_afd(afd_min).render('afd_minimizado_graph', view=True)
 
-lista_nodos = recorrer_ast(ast)
-print(lista_nodos)
-'''
+
+
 afd_directo = direct_afd(ast,alfabeto)
-imprimir_afd(afd_directo)
+
+graficar_direct_afd(afd_directo).render('afd_directo_graph', view=True)
 
 
 '''
 SIMULACIÓN DE AUTÓMATAS
-
+'''
 
 print('el resultado de la simulación del afn  es:',simulacion_afn(cadena, afn))
 print('el resultado de la simulación del afd  es:',simulacion_afd(afd, cadena))
 print('El resultado de la simulación del AFD minimizado es:', simulacion_afd_minimizado(afd_min, cadena))
 
-'''
