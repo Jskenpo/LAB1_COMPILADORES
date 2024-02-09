@@ -7,10 +7,7 @@ digraph {
 	inicial -> b
 	a -> a [label=1]
 	a -> a [label=0]
-	d -> c [label=1]
-	d -> a [label=0]
+	d -> d [label=0]
 	c -> c [label=1]
-	c -> d [label=0]
-	b -> c [label=1]
 	b -> b [label=0]
 }

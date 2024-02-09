@@ -85,7 +85,7 @@ obtener_ultima_pos(ast)
 calcular_followpos(ast)
 
 dot = dibujar_AST(ast)
-dot.render('ast', format='png', view=True)
+#dot.render('ast', format='png', view=True)
 
 '''
 CONSTRUCCIÓN DE AUTÓMATA FINITO NO DETERMINISTA, AUTÓMATA FINITO DETERMINISTA Y AUTÓMATA FINITO DETERMINISTA MINIMIZADO
@@ -94,18 +94,21 @@ CONSTRUCCIÓN DE AUTÓMATA FINITO NO DETERMINISTA, AUTÓMATA FINITO DETERMINISTA
 print('La expresión regular en notación postfix es:', postfix)
 
 afn = postfix_afn(postfix)
-graficar_afn(afn)
+#graficar_afn(afn)
 afd = afn_to_afd(afn, alfabeto)
 estado_labels = label_estados(afd.estados)
-graficar_afd(afd).render('afd_graph', view=True)
+#graficar_afd(afd).render('afd_graph', view=True)
 afd_min = minimizar_afd(afd)
-graficar_afd(afd_min).render('afd_minimizado_graph', view=True)
+#afd_min2 = minimizar_afd1(afd)
+#graficar_afd(afd_min).render('afd_minimizado_graph', view=True)
+#graficar_afd(afd_min2).render('afd_minimizado_graph2', view=True)
 
 
 
 afd_directo = direct_afd(ast,alfabeto)
-
 graficar_direct_afd(afd_directo).render('afd_directo_graph', view=True)
+
+imprimir_afd(afd_directo)
 
 
 '''
@@ -115,4 +118,5 @@ SIMULACIÓN DE AUTÓMATAS
 print('el resultado de la simulación del afn  es:',simulacion_afn(cadena, afn))
 print('el resultado de la simulación del afd  es:',simulacion_afd(afd, cadena))
 print('El resultado de la simulación del AFD minimizado es:', simulacion_afd_minimizado(afd_min, cadena))
+print('El resultado de la simulación del AFD directo es:', simulacion_direct_afd(afd_directo, cadena))
 

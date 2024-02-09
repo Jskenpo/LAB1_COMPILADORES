@@ -39,7 +39,6 @@ class afn:
         self.transiciones = transiciones
         return transiciones
    
-
 def postfix_afn(exp_postfix):
     afnstack = []
     epsilon = 'E'
@@ -74,7 +73,6 @@ def postfix_afn(exp_postfix):
 
     return afnstack.pop()
 
-
 def graficar_afn(afn):
     dot = graphviz.Digraph(format='png')
     estados = 0  
@@ -101,16 +99,21 @@ def graficar_afn(afn):
 
     dot.render('afn_graph', view=True)
 
+def seguimiento(estado, visitados=None):
+    if visitados is None:
+        visitados = set()
 
-def seguimiento(estado):
     estados = set()
     estados.add(estado)
 
     if estado.label is None:
-        if estado.transicion1 is not None:
-            estados |= seguimiento(estado.transicion1)
-        if estado.transicion2 is not None:
-            estados |= seguimiento(estado.transicion2)
+        if estado.transicion1 is not None and estado.transicion1 not in visitados:
+            visitados.add(estado.transicion1)
+            estados |= seguimiento(estado.transicion1, visitados)
+        if estado.transicion2 is not None and estado.transicion2 not in visitados:
+            visitados.add(estado.transicion2)
+            estados |= seguimiento(estado.transicion2, visitados)
+
     return estados
 
 class AFD:
@@ -134,7 +137,6 @@ class AFD:
 
     def agregar_estado_aceptacion(self, estado):
         self.accept.add(tuple(sorted(estado)))
-
 
 def afn_to_afd(afn, alphabet):
     afd = AFD()
@@ -163,7 +165,6 @@ def afn_to_afd(afn, alphabet):
     
     return afd
 
-
 def label_estados(estados):
     alphabet = "abcdefghijklmnopqrstuvwxyz"
     estado_labels = {}
@@ -175,7 +176,6 @@ def label_estados(estados):
             estado_labels[estado] = str(i)
 
     return estado_labels
-
 
 def graficar_afd(afd):
     dot = graphviz.Digraph(format='png')
@@ -196,7 +196,6 @@ def graficar_afd(afd):
         dot.edge(estado_labels[estado1], estado_labels[estado2], label=char)
 
     return dot
-
 
 def minimizar_afd(afd):
     # Get the alphabet symbols from the transitions
@@ -272,6 +271,9 @@ def direct_afd(root,alfabeto):
     #eliminar del lfabeto la cadena vacia 
 
     alfabeto.remove('')
+    
+    if 'E' in alfabeto:
+        alfabeto.remove('E')
 
     # Obtener s0
     s0 = root.NodosPP
@@ -311,7 +313,8 @@ def direct_afd(root,alfabeto):
                 labels.append(U_labels)
 
             # Establecer la transición desde T con el símbolo 'symbol' a U
-            afd.agregar_transicion(tuple(sorted(L)), symbol, tuple(sorted(U_labels)))
+            if U:
+                afd.agregar_transicion(tuple(sorted(L)), symbol, tuple(sorted(U_labels)))
 
             for nodo in U:
                 if nodo.valor == '#':
@@ -335,7 +338,6 @@ def simulacion_afn(string, afn):
     return (afn.accept in actual)
 
 def simulacion_afd(afd, w):
-    estado_labels = label_estados(afd.estados)
     actual = afd.inicial
 
     for char in w:
@@ -352,23 +354,6 @@ def simulacion_afd_minimizado(afd_minimizado, w):
             return False
 
     return actual in afd_minimizado.accept
-
-def imprimir_afd(afd):
-    print("Estados:")
-    for estado in afd.estados:
-        print(estado)
-    
-    print("\nTransiciones:")
-    for origen, transiciones in afd.transitions.items():
-        for simbolo, destino in transiciones.items():
-            print(f"Dtran[{origen}, {simbolo}] = {destino}")
-
-    print("\nEstado inicial:")
-    print(afd.inicial)
-
-    print("\nEstados de aceptación:")
-    for estado in afd.accept:
-        print(estado)
 
 def graficar_direct_afd(afd):
     dot = graphviz.Digraph(format = 'png')
@@ -394,4 +379,81 @@ def graficar_direct_afd(afd):
     
     return dot
 
+def imprimir_afd(afd):
+    print("Estados:")
+    for estado in afd.estados:
+        print(estado)
+    
+    print("\nTransiciones:")
+
+    for origen, transiciones in afd.transitions.items():
+        for simbolo, destino in transiciones.items():
+            print(f"{origen} --{simbolo}--> {destino}")
+
+    print("\nEstado inicial:")
+    print(afd.inicial)
+
+    print("\nEstados de aceptación:")
+    for estado in afd.accept:
+        print(estado)
+
+def minimizar_afd1(afd):
+    # Get the alphabet symbols from the transitions
+    alfabeto = set([symbol for _, symbol in afd.transitions.keys()])
+
+    P = [afd.accept, afd.estados - afd.accept]
+    W = [set(y) for y in P]
+
+    while W:
+        A = W.pop()
+        for c in alfabeto:
+            X = set()
+            for s in afd.estados:
+                transition = afd.transitions.get((s, c))
+                if transition in A:
+                    X.add(s)
+            for Y in P:
+                if X.intersection(Y) and (Y - X):
+                    P.remove(Y)
+                    P.extend([Y.intersection(X), Y - X])
+                    if Y in W:
+                        W.remove(Y)
+                        W.extend([Y.intersection(X), Y - X])
+                    else:
+                        if len(Y.intersection(X)) < len(Y - X):
+                            W.append(Y.intersection(X))
+                        else:
+                            W.append(Y - X)
+
+    minimized_states = [list(y) for y in P]
+    minimized_start_state = [s for s in minimized_states if afd.inicial in s][0]
+    minimized_accept_states = [s for s in minimized_states if set(s).intersection(afd.accept)]
+    minimized_transitions = {}
+
+    for state in minimized_states:
+        for c in alfabeto:
+            for s in afd.estados:
+                transition = afd.transitions.get((s, c))
+                if transition in state:
+                    for min_state in minimized_states:
+                        if transition in min_state:
+                            minimized_transitions[(str(state), c)] = str(min_state)
+
+    minimized_afd = AFD()
+    minimized_afd.estados = set([str(state) for state in minimized_states])
+    minimized_afd.transitions = minimized_transitions
+    minimized_afd.inicial = str(minimized_start_state)
+    minimized_afd.accept = set([str(s) for s in minimized_accept_states])
+
+    return minimized_afd
+
+def simulacion_direct_afd(afd, w):
+    actual = afd.inicial
+
+    for char in w:
+        if actual not in afd.transitions or char not in afd.transitions[actual]:
+            return False
+        actual = afd.transitions[actual][char]
+
+    return actual in afd.accept
 
