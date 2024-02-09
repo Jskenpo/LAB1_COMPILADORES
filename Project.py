@@ -14,6 +14,28 @@ from prepare import *
 from AST import *
 from Automatas import *
 
+def verify_regex(expresion):
+    pila = []
+    parentesis_abiertos = {'(', '[', '{'}
+    parentesis_cerrados = {')', ']', '}'}
+    parentesis_complementarios = {'(': ')', '[': ']', '{': '}'}
+
+    for char in expresion:
+        if char in parentesis_abiertos:
+            pila.append(char)
+        elif char in parentesis_cerrados:
+            if not pila:
+                return False
+            ultimo_abierto = pila.pop()
+            if parentesis_complementarios[ultimo_abierto] != char:
+                return False
+
+    return len(pila) == 0
+
+# Ejemplo de uso
+
+
+
 
 def calcular_followpos(nodo):
 
@@ -67,6 +89,14 @@ PREPROCESAMIENTO DE LA EXPRESIÓN REGULAR
 nombre_archivo = 'expresion_cadena.txt'
 expresion, cadena = leer_expresion_y_cadena(nombre_archivo)
 print('La expresión regular es:', expresion)
+
+
+if verify_regex(expresion):
+    print("La expresión regular está correctamente escrita.")
+else:
+    print("La expresión regular está mal escrita.")
+    exit()
+
 expresion = convertFirst(expresion)
 infix,alfabeto = convertir_expresion(expresion)
 explicit = implicit_to_explicit(infix)
@@ -100,7 +130,7 @@ estado_labels = label_estados(afd.estados)
 #graficar_afd(afd).render('afd_graph', view=True)
 afd_min = minimizar_afd(afd)
 #afd_min2 = minimizar_afd1(afd)
-#graficar_afd(afd_min).render('afd_minimizado_graph', view=True)
+graficar_afd(afd_min).render('afd_minimizado_graph', view=True)
 #graficar_afd(afd_min2).render('afd_minimizado_graph2', view=True)
 
 

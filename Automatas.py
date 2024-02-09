@@ -338,13 +338,15 @@ def simulacion_afn(string, afn):
     return (afn.accept in actual)
 
 def simulacion_afd(afd, w):
+    estado_labels = label_estados(afd.estados)
     actual = afd.inicial
 
     for char in w:
-        actual = afd.transitions[(actual, char)]
+        actual = afd.transitions.get((actual, char), None)
+        if actual is None:
+            return False
     
     return actual in afd.accept
-
 def simulacion_afd_minimizado(afd_minimizado, w):
     actual = afd_minimizado.inicial
 
